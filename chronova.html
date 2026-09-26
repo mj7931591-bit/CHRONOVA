@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CHRONOVA — Time, Reimagined.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070912; --bg2:#0d1120; --card:rgba(255,255,255,0.04); --border:rgba(255,255,255,0.09);
+  --text:#eef0f6; --sub:#8a90a8; --accent:#6ee7ff; --accent2:#7c7ff0; --glow:rgba(110,231,255,.35);
+  --ring1:#6ee7ff; --ring2:#7c7ff0; --ring3:#c084fc;
+  font-family:'Inter',sans-serif;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+:root[data-theme="aurora"]{--bg:#081014;--bg2:#0a1a1c;--accent:#4de3b0;--accent2:#38bdf8;--ring1:#4de3b0;--ring2:#38bdf8;--ring3:#a3e635;--glow:rgba(77,227,176,.3)}
+:root[data-theme="solar"]{--bg:#120b06;--bg2:#1a1108;--accent:#ffb454;--accent2:#ff7a59;--ring1:#ffb454;--ring2:#ff7a59;--ring3:#ffe08a;--glow:rgba(255,180,84,.3)}
+:root[data-theme="cyber"]{--bg:#08060f;--bg2:#120a1f;--accent:#ff5ec4;--accent2:#7c7ff0;--ring1:#ff5ec4;--ring2:#7c7ff0;--ring3:#6ee7ff;--glow:rgba(255,94,196,.3)}
+:root[data-theme="minimal"]{--bg:#0a0a0a;--bg2:#111;--accent:#f2f2f2;--accent2:#9a9a9a;--ring1:#f2f2f2;--ring2:#9a9a9a;--ring3:#5c5c5c;--glow:rgba(255,255,255,.15)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:radial-gradient(120% 120% at 50% -10%,var(--bg2),var(--bg));color:var(--text);overflow-x:hidden;min-height:100%}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* ---- Intro ---- */
+#intro{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:50;cursor:pointer;transition:opacity .8s ease,visibility .8s}
+#intro h1{font-family:'Space Grotesk';font-size:clamp(2.5rem,8vw,5rem);letter-spacing:.08em;font-weight:700}
+#intro p{color:var(--sub);letter-spacing:.15em;font-size:.85rem}
+#intro .tap{margin-top:30px;font-size:.75rem;color:var(--sub);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+#intro.hidden{opacity:0;visibility:hidden;pointer-events:none}
+
+/* ---- Layout ---- */
+#app{display:flex;flex-direction:column;min-height:100vh;height:100%;opacity:0;transition:opacity .6s ease .1s}
+#app.show{opacity:1}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;flex-wrap:wrap;gap:10px}
+.brand{font-family:'Space Grotesk';font-weight:700;letter-spacing:.06em;font-size:1.1rem}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+button,select{font-family:inherit;color:var(--text);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:.8rem;cursor:pointer;transition:all .25s}
+button:hover,select:hover{border-color:var(--accent);background:rgba(255,255,255,0.07)}
+button:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.active{background:var(--accent);color:#05060a;border-color:var(--accent)}
+
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:20px 16px 90px}
+.view{display:none;width:100%;max-width:900px;flex-direction:column;align-items:center;gap:26px;animation:fade .5s ease}
+.view.active{display:flex}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ---- Clock / Orbit ---- */
+.orbit-wrap{position:relative;width:min(78vw,380px);height:min(78vw,380px);display:flex;align-items:center;justify-content:center}
+.orbit-wrap svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.orbit-wrap circle.track{stroke:rgba(255,255,255,0.06);fill:none;stroke-width:3}
+.orbit-wrap circle.prog{fill:none;stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .3s linear}
+.clock-core{text-align:center;z-index:2}
+.time{font-family:'Space Grotesk';font-weight:600;font-size:clamp(2.2rem,9vw,3.6rem);letter-spacing:.02em;text-shadow:0 0 30px var(--glow)}
+.ampm{font-size:1rem;color:var(--sub);margin-left:6px}
+.date{color:var(--sub);font-size:.85rem;margin-top:6px;letter-spacing:.04em}
+.mood{margin-top:10px;font-size:.95rem;color:var(--accent);font-style:italic}
+.onesecond{font-size:.7rem;color:var(--sub);opacity:.7;min-height:16px}
+
+.pillrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.theme-dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);cursor:pointer}
+.theme-dot.active{border-color:var(--text)}
+
+/* ---- Cards / Panels ---- */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px;width:100%;backdrop-filter:blur(12px)}
+.panel h2{font-family:'Space Grotesk';font-size:1.2rem;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.big-timer{font-family:'Space Grotesk';font-size:clamp(2rem,7vw,3rem);text-align:center;margin:14px 0}
+input[type=number],input[type=text]{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px;font-family:inherit;width:100%}
+.breathe{width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,var(--accent),transparent 70%);margin:0 auto 16px;animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(.7);opacity:.6}50%{transform:scale(1.15);opacity:1}}
+.lap-list{max-height:140px;overflow-y:auto;font-size:.85rem;color:var(--sub);margin-top:10px}
+.city-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:.9rem}
+.city-row:last-child{border:none}
+.ring-mini{width:90px;height:90px}
+.year-stats{display:flex;justify-content:space-around;text-align:center;margin-top:14px;flex-wrap:wrap;gap:10px}
+.year-stats div span{display:block;font-family:'Space Grotesk';font-size:1.4rem;color:var(--accent)}
+.dots{display:grid;grid-template-columns:repeat(20,1fr);gap:3px;margin-top:18px}
+.dots i{width:100%;aspect-ratio:1;border-radius:2px;background:rgba(255,255,255,0.08);display:block}
+.dots i.past{background:var(--accent)}
+.dots i.today{background:var(--accent2);box-shadow:0 0 6px var(--accent2)}
+
+/* ---- Nav ---- */
+nav.side{position:fixed;top:50%;left:20px;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:10}
+nav.side button{writing-mode:horizontal-tb;width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:12px}
+nav.bottom{display:none}
+@media (max-width:760px){
+  nav.side{display:none}
+  nav.bottom{display:flex;position:fixed;bottom:0;left:0;right:0;background:rgba(8,10,18,0.85);backdrop-filter:blur(14px);border-top:1px solid var(--border);padding:10px 6px calc(10px + env(safe-area-inset-bottom,0px));justify-content:space-around;z-index:10}
+  nav.bottom button{flex:1;border:none;background:none;font-size:1.1rem}
+  nav.bottom button.active{background:none;color:var(--accent)}
+  header{padding:14px 16px}
+  main{padding-bottom:100px}
+}
+.hint{position:fixed;bottom:70px;left:0;right:0;text-align:center;font-size:.7rem;color:var(--sub)}
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <h1>CHRONOVA</h1>
+  <p>TIME, REIMAGINED.</p>
+  <div class="tap">Tap anywhere to enter your time</div>
+</div>
+
+<div id="app">
+<nav class="side" aria-label="Sections">
+  <button data-view="watch" class="active" title="Watch">⌚</button>
+  <button data-view="focus" title="Focus">◎</button>
+  <button data-view="stopwatch" title="Stopwatch">⏱</button>
+  <button data-view="countdown" title="Countdown">⏳</button>
+  <button data-view="world" title="World Clock">🌍</button>
+  <button data-view="year" title="Year Progress">▦</button>
+</nav>
+
+<header>
+  <div class="brand">CHRONOVA</div>
+  <div class="controls">
+    <button id="fmtToggle">24H</button>
+    <div class="pillrow" id="themeRow"></div>
+  </div>
+</header>
+
+<main>
+  <!-- WATCH -->
+  <section class="view active" id="view-watch">
+    <div class="orbit-wrap">
+      <svg viewBox="0 0 200 200">
+        <circle class="track" cx="100" cy="100" r="90"></circle>
+        <circle class="track" cx="100" cy="100" r="74"></circle>
+        <circle class="track" cx="100" cy="100" r="58"></circle>
+        <circle class="prog" id="ringSec" cx="100" cy="100" r="90" stroke="var(--ring1)"></circle>
+        <circle class="prog" id="ringMin" cx="100" cy="100" r="74" stroke="var(--ring2)"></circle>
+        <circle class="prog" id="ringHour" cx="100" cy="100" r="58" stroke="var(--ring3)"></circle>
+      </svg>
+      <div class="clock-core">
+        <div class="time" id="timeStr">--:--:--<span class="ampm" id="ampm"></span></div>
+        <div class="date" id="dateStr">—</div>
+        <div class="mood" id="moodStr">—</div>
+      </div>
+    </div>
+    <div class="onesecond" id="oneSecond"></div>
+  </section>
+
+  <!-- FOCUS -->
+  <section class="view" id="view-focus">
+    <div class="panel" style="max-width:420px;text-align:center">
+      <h2>Focus Mode</h2>
+      <div class="breathe" id="breathe"></div>
+      <div class="big-timer" id="focusDisplay">25:00</div>
+      <div class="presets" style="justify-content:center">
+        <button data-min="25">25m</button>
+        <button data-min="45">45m</button>
+        <button data-min="60">60m</button>
+        <button data-min="90">90m</button>
+        <input type="number" id="focusCustom" placeholder="Custom min" style="max-width:110px">
+      </div>
+      <div class="presets" style="justify-content:center">
+        <button id="focusStart">Start</button>
+        <button id="focusPause">Pause</button>
+        <button id="focusReset">Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STOPWATCH -->
+  <section class="view" id="view-stopwatch">
+    <div class="panel" style="max-width:420px;text-align:center">
+      <h2>Stopwatch</h2>
+      <div class="big-timer" id="swDisplay">00:00.00</div>
+      <div class="presets" style="justify-content:center">
+        <button id="swStart">Start</button>
+        <button id="swLap">Lap</button>
+        <button id="swReset">Reset</button>
+      </div>
+      <div class="lap-list" id="swLaps"></div>
+    </div>
+  </section>
+
+  <!-- COUNTDOWN -->
+  <section class="view" id="view-countdown">
+    <div class="panel" style="max-width:420px;text-align:center">
+      <h2>Countdown</h2>
+      <div class="big-timer" id="cdDisplay">00:00:00</div>
+      <div class="presets" style="justify-content:center">
+        <button data-sec="300">5m</button>
+        <button data-sec="600">10m</button>
+        <button data-sec="1500">25m</button>
+        <button data-sec="1800">30m</button>
+        <button data-sec="3600">1h</button>
+      </div>
+      <div class="grid2" style="max-width:280px;margin:10px auto">
+        <input type="number" id="cdMin" placeholder="Minutes">
+        <input type="number" id="cdSec" placeholder="Seconds">
+      </div>
+      <div class="presets" style="justify-content:center">
+        <button id="cdStart">Start</button>
+        <button id="cdReset">Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORLD CLOCK -->
+  <section class="view" id="view-world">
+    <div class="panel" style="max-width:460px">
+      <h2>World Clock</h2>
+      <div id="cityList"></div>
+    </div>
+  </section>
+
+  <!-- YEAR -->
+  <section class="view" id="view-year">
+    <div class="panel" style="max-width:520px">
+      <h2>Your Year</h2>
+      <div class="year-stats">
+        <div><span id="yPassed">0</span>days passed</div>
+        <div><span id="yLeft">0</span>days remaining</div>
+        <div><span id="yPct">0%</span>complete</div>
+      </div>
+      <div class="dots" id="yearDots"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom" aria-label="Sections">
+  <button data-view="watch" class="active">⌚</button>
+  <button data-view="focus">◎</button>
+  <button data-view="stopwatch">⏱</button>
+  <button data-view="countdown">⏳</button>
+  <button data-view="world">🌍</button>
+  <button data-view="year">▦</button>
+</nav>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=(s,c)=>(c||document).querySelector(s), $$=(s,c)=>[...(c||document).querySelectorAll(s)];
+const store={
+  get(k,d){try{const v=localStorage.getItem('chronova_'+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('chronova_'+k,JSON.stringify(v))}catch(e){}}
+};
+
+/* Intro */
+const intro=$('#intro'), app=$('#app');
+function enter(){intro.classList.add('hidden'); app.classList.add('show');}
+intro.addEventListener('click',enter);
+intro.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')enter()});
+
+/* Theme */
+const themes=['midnight','aurora','solar','cyber','minimal'];
+const themeRow=$('#themeRow');
+themes.forEach(t=>{
+  const b=document.createElement('div');
+  b.className='theme-dot'; b.title=t; b.style.background=`var(--accent)`;
+  b.dataset.theme=t;
+  b.addEventListener('click',()=>setTheme(t));
+  themeRow.appendChild(b);
+});
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t==='midnight'?'':t);
+  store.set('theme',t);
+  $$('.theme-dot').forEach(d=>d.classList.toggle('active',d.dataset.theme===t));
+}
+setTheme(store.get('theme','midnight'));
+
+/* Format toggle */
+let is24=store.get('fmt24',true);
+const fmtBtn=$('#fmtToggle');
+function refreshFmtBtn(){fmtBtn.textContent=is24?'24H':'12H';}
+fmtBtn.addEventListener('click',()=>{is24=!is24;store.set('fmt24',is24);refreshFmtBtn()});
+refreshFmtBtn();
+
+/* Nav */
+function showView(name){
+  $$('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+name));
+  $$('nav button').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+}
+$$('nav button').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+
+/* Clock + orbit + mood */
+const R={sec:90,min:74,hour:58};
+const C={sec:2*Math.PI*R.sec, min:2*Math.PI*R.min, hour:2*Math.PI*R.hour};
+['ringSec','ringMin','ringHour'].forEach((id,i)=>{
+  const r=[R.sec,R.min,R.hour][i], c=2*Math.PI*r;
+  $('#'+id).setAttribute('stroke-dasharray', c);
+});
+function moodFor(h){
+  if(h>=5&&h<8) return "Quiet beginnings.";
+  if(h>=8&&h<12) return "Build momentum.";
+  if(h>=12&&h<17) return "Stay in motion.";
+  if(h>=17&&h<21) return "Slow down. Reflect.";
+  if(h>=21||h<0) return "Your day is becoming a memory.";
+  return "The world is quiet.";
+}
+const oneSecMsgs=["One second passed.","One second became memory.","One second closer to your goal.","Time doesn't stop."];
+function pad(n){return n.toString().padStart(2,'0')}
+function tickClock(){
+  const d=new Date();
+  let h=d.getHours(), m=d.getMinutes(), s=d.getSeconds();
+  let hh=h, ap='';
+  if(!is24){ap=h>=12?'PM':'AM'; hh=h%12||12;}
+  $('#timeStr').innerHTML=`${pad(hh)}:${pad(m)}:${pad(s)}<span class="ampm">${ap}</span>`;
+  $('#dateStr').textContent=d.toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  $('#moodStr').textContent=moodFor(h);
+  const secFrac=(s+d.getMilliseconds()/1000)/60;
+  const minFrac=(m+s/60)/60;
+  const hourFrac=((h%12)+m/60)/12;
+  $('#ringSec').style.strokeDashoffset=C.sec*(1-secFrac);
+  $('#ringMin').style.strokeDashoffset=C.min*(1-minFrac);
+  $('#ringHour').style.strokeDashoffset=C.hour*(1-hourFrac);
+  if(s%3===0) $('#oneSecond').textContent=oneSecMsgs[Math.floor(Math.random()*oneSecMsgs.length)];
+}
+setInterval(tickClock,1000); tickClock();
+
+/* Focus mode */
+let focusTotal=25*60, focusLeft=focusTotal, focusTimer=null, focusRunning=false;
+function renderFocus(){
+  const m=Math.floor(focusLeft/60), s=focusLeft%60;
+  $('#focusDisplay').textContent=`${pad(m)}:${pad(s)}`;
+}
+$$('#view-focus [data-min]').forEach(b=>b.addEventListener('click',()=>{
+  focusTotal=+b.dataset.min*60; focusLeft=focusTotal; renderFocus();
+}));
+$('#focusCustom').addEventListener('change',e=>{
+  const v=parseInt(e.target.value); if(v>0){focusTotal=v*60; focusLeft=focusTotal; renderFocus();}
+});
+$('#focusStart').addEventListener('click',()=>{
+  if(focusRunning) return; focusRunning=true;
+  focusTimer=setInterval(()=>{
+    if(focusLeft<=0){clearInterval(focusTimer);focusRunning=false;return;}
+    focusLeft--; renderFocus();
+  },1000);
+});
+$('#focusPause').addEventListener('click',()=>{clearInterval(focusTimer);focusRunning=false;});
+$('#focusReset').addEventListener('click',()=>{clearInterval(focusTimer);focusRunning=false;focusLeft=focusTotal;renderFocus();});
+renderFocus();
+
+/* Stopwatch */
+let swStart=0, swElapsed=0, swTimer=null, swRunning=false, laps=[];
+function fmtMs(ms){
+  const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000), cs=Math.floor((ms%1000)/10);
+  return `${pad(m)}:${pad(s)}.${pad(cs)}`;
+}
+function swRender(){$('#swDisplay').textContent=fmtMs(swElapsed);}
+$('#swStart').addEventListener('click',(e)=>{
+  if(!swRunning){
+    swRunning=true; swStart=Date.now()-swElapsed; e.target.textContent='Pause';
+    swTimer=setInterval(()=>{swElapsed=Date.now()-swStart; swRender();},30);
+  }else{
+    swRunning=false; clearInterval(swTimer); e.target.textContent='Start';
+  }
+});
+$('#swLap').addEventListener('click',()=>{
+  if(!swRunning) return;
+  laps.unshift(fmtMs(swElapsed));
+  $('#swLaps').innerHTML=laps.map((l,i)=>`<div>Lap ${laps.length-i}: ${l}</div>`).join('');
+});
+$('#swReset').addEventListener('click',()=>{
+  swRunning=false; clearInterval(swTimer); swElapsed=0; laps=[];
+  $('#swLaps').innerHTML=''; $('#swStart').textContent='Start'; swRender();
+});
+swRender();
+
+/* Countdown */
+let cdLeft=0, cdTimer=null;
+function cdRender(){
+  const h=Math.floor(cdLeft/3600), m=Math.floor((cdLeft%3600)/60), s=cdLeft%60;
+  $('#cdDisplay').textContent=`${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+$$('#view-countdown [data-sec]').forEach(b=>b.addEventListener('click',()=>{cdLeft=+b.dataset.sec; cdRender();}));
+$('#cdStart').addEventListener('click',()=>{
+  clearInterval(cdTimer);
+  const mIn=parseInt($('#cdMin').value)||0, sIn=parseInt($('#cdSec').value)||0;
+  if(mIn||sIn) cdLeft=mIn*60+sIn;
+  if(cdLeft<=0) return;
+  cdTimer=setInterval(()=>{
+    cdLeft--; cdRender();
+    if(cdLeft<=0){clearInterval(cdTimer); cdDone();}
+  },1000);
+});
+$('#cdReset').addEventListener('click',()=>{clearInterval(cdTimer); cdLeft=0; cdRender();});
+function cdDone(){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(5,6,10,.92);display:flex;align-items:center;justify-content:center;z-index:60;font-family:Space Grotesk;font-size:2rem;color:var(--accent);animation:fade .5s ease';
+  ov.textContent='Time’s up.';
+  ov.addEventListener('click',()=>ov.remove());
+  document.body.appendChild(ov);
+}
+cdRender();
+
+/* World clock */
+const cities=[
+  ['Mumbai','Asia/Kolkata'],['Delhi','Asia/Kolkata'],['London','Europe/London'],
+  ['New York','America/New_York'],['Tokyo','Asia/Tokyo'],['Dubai','Asia/Dubai'],['Singapore','Asia/Singapore']
+];
+function renderCities(){
+  $('#cityList').innerHTML=cities.map(([name,tz])=>{
+    const now=new Date();
+    const t=new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:!is24}).format(now);
+    const hr=parseInt(new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'2-digit',hour12:false}).format(now));
+    const icon=(hr>=6&&hr<18)?'☀️':'🌙';
+    return `<div class="city-row"><span>${icon} ${name}</span><span>${t}</span></div>`;
+  }).join('');
+}
+setInterval(renderCities,1000); renderCities();
+
+/* Year progress */
+function renderYear(){
+  const now=new Date(); const start=new Date(now.getFullYear(),0,1);
+  const end=new Date(now.getFullYear()+1,0,1);
+  const totalDays=Math.round((end-start)/86400000);
+  const passed=Math.floor((now-start)/86400000);
+  const pct=Math.round(passed/totalDays*100);
+  $('#yPassed').textContent=passed; $('#yLeft').textContent=totalDays-passed; $('#yPct').textContent=pct+'%';
+  const dots=$('#yearDots'); dots.innerHTML='';
+  for(let i=0;i<totalDays;i++){
+    const el=document.createElement('i');
+    if(i<passed) el.className='past'; else if(i===passed) el.className='today';
+    const day=new Date(start.getTime()+i*86400000);
+    el.title=day.toDateString();
+    dots.appendChild(el);
+  }
+}
+renderYear();
+})();
+</script>
+</body>
+</html>
